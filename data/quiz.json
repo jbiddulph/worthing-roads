@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "What is the capital of France?",
+      "options": {
+        "a": "London",
+        "b": "Berlin",
+        "c": "Paris",
+        "d": "Madrid"
+      },
+      "correctAnswer": "c"
+    },
+    {
+      "id": 2,
+      "question": "Which planet is known as the Red Planet?",
+      "options": {
+        "a": "Venus",
+        "b": "Mars",
+        "c": "Jupiter",
+        "d": "Saturn"
+      },
+      "correctAnswer": "b"
+    },
+    {
+      "id": 3,
+      "question": "What is the largest ocean on Earth?",
+      "options": {
+        "a": "Atlantic Ocean",
+        "b": "Indian Ocean",
+        "c": "Arctic Ocean",
+        "d": "Pacific Ocean"
+      },
+      "correctAnswer": "d"
+    },
+    {
+      "id": 4,
+      "question": "Who painted the Mona Lisa?",
+      "options": {
+        "a": "Vincent van Gogh",
+        "b": "Pablo Picasso",
+        "c": "Leonardo da Vinci",
+        "d": "Michelangelo"
+      },
+      "correctAnswer": "c"
+    }
+  ]
+}
