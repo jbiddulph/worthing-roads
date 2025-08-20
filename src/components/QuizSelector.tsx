@@ -44,9 +44,9 @@ export default function QuizSelector() {
       <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">Worthing Roads Knowledge Quiz</h1>
       
       <div className="text-center mb-8">
-        <p className="text-lg text-gray-600 mb-4">
-          Test your knowledge of Worthing's road network! Choose a quiz part to get started.
-        </p>
+                  <p className="text-lg text-gray-600 mb-4">
+            Test your knowledge of Worthing&apos;s road network! Choose a quiz part to get started.
+          </p>
         <p className="text-sm text-gray-500">
           Each part contains unique questions about road junctions in Worthing.
         </p>
@@ -71,7 +71,7 @@ export default function QuizSelector() {
         <div className="border-2 border-green-200 rounded-lg p-6 hover:border-green-400 transition-colors cursor-pointer bg-green-50 hover:bg-green-100" onClick={() => setSelectedQuiz('part2')}>
           <h2 className="text-2xl font-bold text-green-800 mb-3">Part 2</h2>
           <p className="text-gray-700 mb-4">
-            Advanced road knowledge quiz with additional questions about Worthing's road network.
+            Advanced road knowledge quiz with additional questions about Worthing&apos;s road network.
           </p>
           <div className="text-sm text-green-600 font-medium">
             • 100+ new questions<br/>
