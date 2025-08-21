@@ -27,7 +27,7 @@ export default function RoadQuiz() {
   const [loading, setLoading] = useState(true);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
-  const [showMap, setShowMap] = useState(false);
+  // Map is always visible now
   const [correctRoadName, setCorrectRoadName] = useState<string>('');
 
   useEffect(() => {
@@ -200,7 +200,6 @@ export default function RoadQuiz() {
     const correctAnswerKey = currentQuestion.correctAnswer;
     const correctRoad = currentQuestion.options[correctAnswerKey];
     setCorrectRoadName(correctRoad);
-    setShowMap(true);
     
     setQuestionsAnswered(prev => prev + 1);
     setUserAnswers(prev => {
@@ -216,7 +215,7 @@ export default function RoadQuiz() {
       setSelectedAnswer(null);
       setFeedback('');
       setShowFeedback(false);
-      setShowMap(false);
+      setCorrectRoadName(''); // Reset road name to force map re-render
     } else {
       setEndTime(new Date());
       setQuizComplete(true);
@@ -233,7 +232,6 @@ export default function RoadQuiz() {
     setUserAnswers([]);
     setStartTime(null);
     setEndTime(null);
-    setShowMap(false);
     setCorrectRoadName('');
   };
 
@@ -322,11 +320,13 @@ export default function RoadQuiz() {
         </div>
       )}
       
-      {/* Road Map Component */}
-      <RoadMap 
-        roadName={correctRoadName} 
-        isVisible={showMap} 
-      />
+      {/* Road Map Component - Only render when we have a road name and answer is selected */}
+      {correctRoadName && (
+        <RoadMap 
+          roadName={correctRoadName} 
+          isVisible={!!selectedAnswer} 
+        />
+      )}
       
       {selectedAnswer && (
         <div className="text-center">

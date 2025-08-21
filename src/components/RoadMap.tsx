@@ -13,94 +13,104 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
+  console.log('RoadMap render:', { isVisible, roadName, mapExists: !!map.current });
+
+  // Initialize map once
   useEffect(() => {
-    if (!isVisible || !mapContainer.current) return;
+    console.log('Map init effect:', { hasContainer: !!mapContainer.current, hasMap: !!map.current });
+    
+    if (!mapContainer.current || map.current) return;
 
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) {
-      setError('Mapbox token not configured');
+      console.log('No Mapbox token found');
       return;
     }
 
+    console.log('Creating map...');
     mapboxgl.accessToken = token;
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [-0.3719, 50.8179],
+      zoom: 13
+    });
 
-    // Initialize map
-    if (!map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-0.3719, 50.8179], // Worthing coordinates
-        zoom: 13
-      });
+    map.current.on('load', () => {
+      console.log('Map loaded successfully');
+    });
 
-      map.current.on('load', () => {
-        setLoading(false);
-      });
-    }
+    map.current.on('error', (e) => {
+      console.error('Map error:', e);
+    });
+  }, []);
 
-    // Search for the road location
-    const searchRoad = async () => {
-      if (!map.current) return;
+  // Update road when roadName changes
+  useEffect(() => {
+    console.log('Road update effect:', { hasMap: !!map.current, roadName, isVisible });
+    
+    if (!map.current || !roadName || !isVisible) return;
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    
+    // Clear old markers first
+    document.querySelectorAll('.mapboxgl-marker').forEach(m => m.remove());
+    
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) return;
 
-      try {
-        const searchQuery = `${roadName}, Worthing, UK`;
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${token}&country=GB&types=address`
-        );
+    console.log('Searching for road:', roadName);
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch location data');
-        }
-
-        const data = await response.json();
-
+    // Search for road
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(roadName + ', Worthing, UK')}.json?access_token=${token}&country=GB&types=address`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('Geocoding response:', data);
+        
         if (data.features && data.features.length > 0) {
           const [lng, lat] = data.features[0].center;
-
-          // Remove existing markers
-          const markers = document.querySelectorAll('.mapboxgl-marker');
-          markers.forEach(marker => marker.remove());
-
+          console.log('Found location:', [lng, lat]);
+          
           // Add new marker
           new mapboxgl.Marker({ color: '#3B82F6' })
             .setLngLat([lng, lat])
-            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${roadName}</h3><p>Worthing, UK</p>`))
-            .addTo(map.current);
-
-          // Fly to the location
-          map.current.flyTo({
+            .addTo(map.current!);
+          
+          // Fly to location
+          map.current!.flyTo({
             center: [lng, lat],
-            zoom: 16,
-            duration: 2000
+            zoom: 15,
+            duration: 1500
           });
+          
+          console.log('Map updated successfully');
         } else {
-          setError(`Could not find location for ${roadName}`);
+          console.log('No location found for:', roadName);
         }
-      } catch (err) {
-        setError('Failed to load map data');
-        console.error('Map error:', err);
-      } finally {
         setLoading(false);
-      }
-    };
+      })
+      .catch(err => {
+        console.error('Error searching for road:', err);
+        setLoading(false);
+      });
+  }, [roadName, isVisible]);
 
-    searchRoad();
-
-    // Cleanup
+  // Cleanup
+  useEffect(() => {
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, [roadName, isVisible]);
+  }, []);
 
-  if (!isVisible) return null;
+  if (!isVisible) {
+    console.log('Map not visible, returning null');
+    return null;
+  }
 
   return (
     <div className="mt-4">
@@ -115,22 +125,11 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
           </div>
         )}
 
-        {error && (
-          <div className="flex items-center justify-center h-64 bg-red-50 border border-red-200 rounded-lg">
-            <div className="text-red-600 text-center">
-              <p className="font-medium">Map Error</p>
-              <p className="text-sm">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <div 
-            ref={mapContainer} 
-            className="w-full h-64 rounded-lg border border-gray-300"
-            style={{ minHeight: '256px' }}
-          />
-        )}
+        <div 
+          ref={mapContainer} 
+          className="w-full h-64 rounded-lg border border-gray-300"
+          style={{ height: '256px' }}
+        />
 
         <p className="text-sm text-gray-600 mt-2">
           This map shows the approximate location of {roadName} in Worthing.
