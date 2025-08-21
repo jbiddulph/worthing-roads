@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import RoadMap from './RoadMap';
 
 interface Road { road_name: string }
 interface RoadQuestion {
@@ -26,6 +27,8 @@ export default function RoadQuizPart2() {
   const [loading, setLoading] = useState(true);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [correctRoadName, setCorrectRoadName] = useState<string>('');
 
   useEffect(() => {
     const load = async () => {
@@ -114,7 +117,7 @@ export default function RoadQuizPart2() {
 
           built.push({
             id: id++,
-            question: `What road junctions off ${mainRoad}?`,
+            question: `Which of these forms a junction with ${mainRoad}?`,
             options: { a: optionsArray[0], b: optionsArray[1], c: optionsArray[2], d: optionsArray[3] },
             correctAnswer: correctKey,
             explanation: `${correct} junctions off ${mainRoad}.`
@@ -192,6 +195,13 @@ export default function RoadQuizPart2() {
     setSelectedAnswer(answer);
     setShowFeedback(true);
     setFeedback(answer === currentQuestion.correctAnswer ? 'Correct answer!' : 'Wrong answer!');
+    
+    // Set the correct road name for the map
+    const correctAnswerKey = currentQuestion.correctAnswer;
+    const correctRoad = currentQuestion.options[correctAnswerKey];
+    setCorrectRoadName(correctRoad);
+    setShowMap(true);
+    
     setQuestionsAnswered(prev => prev + 1);
     setUserAnswers(prev => {
       const next = [...prev];
@@ -206,6 +216,7 @@ export default function RoadQuizPart2() {
       setSelectedAnswer(null);
       setFeedback('');
       setShowFeedback(false);
+      setShowMap(false);
     } else {
       setEndTime(new Date());
       setQuizComplete(true);
@@ -222,6 +233,8 @@ export default function RoadQuizPart2() {
     setUserAnswers([]);
     setStartTime(null);
     setEndTime(null);
+    setShowMap(false);
+    setCorrectRoadName('');
   };
 
   if (quizComplete) {
@@ -308,6 +321,13 @@ export default function RoadQuizPart2() {
           <p className={`font-semibold ${feedback === 'Correct answer!' ? 'text-green-800' : 'text-red-800'}`}>{feedback}</p>
         </div>
       )}
+      
+      {/* Road Map Component */}
+      <RoadMap 
+        roadName={correctRoadName} 
+        isVisible={showMap} 
+      />
+      
       {selectedAnswer && (
         <div className="text-center">
           <button onClick={handleNextQuestion} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">{currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}</button>

@@ -8,6 +8,7 @@ A comprehensive interactive quiz application that tests your knowledge of Worthi
   - **Part 1**: 540+ questions from the original road network
   - **Part 2**: 100+ additional advanced questions
 - **Interactive Quiz Interface**: Multiple choice questions with immediate feedback
+- **Interactive Maps**: Shows the location of correct answers using Mapbox
 - **Timer & Scoring**: Track your performance and completion time
 - **Confetti Celebration**: Festive animations when completing quizzes
 - **Detailed Results**: Comprehensive summary of all questions and answers
@@ -15,9 +16,9 @@ A comprehensive interactive quiz application that tests your knowledge of Worthi
 
 ## 🎯 Quiz Format
 
-Each question follows the format: **"What road junctions off [Main Road]?"**
+Each question follows the format: **"Which of these forms a junction with [Main Road]?"**
 
-- **Question Example**: "What road junctions off Heene Way?"
+- **Question Example**: "Which of these forms a junction with Heene Way?"
 - **Correct Answer**: One of the smaller roads that junctions off the main road
 - **Options**: 4 multiple choice answers (1 correct + 3 distractors)
 - **Explanation**: Clear explanation of the correct junction relationship
@@ -70,12 +71,17 @@ worthing-roads/
    npm install
    ```
 
-3. **Run the development server**
+3. **Set up Mapbox (Optional - for map functionality)**
+   - Get a free Mapbox token from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
+   - Create a `.env` file in the root directory
+   - Add your token: `MAPBOX_TOKEN=your_mapbox_token_here`
+
+4. **Run the development server**
    ```bash
    npm run dev
    ```
 
-4. **Open your browser**
+5. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 🎮 How to Play
