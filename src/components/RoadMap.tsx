@@ -73,12 +73,12 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
           const [lng, lat] = data.features[0].center;
           console.log('Found location:', [lng, lat]);
           
-          // Add new marker
+          // Add blue marker for the correct answer road (centered)
           new mapboxgl.Marker({ color: '#3B82F6' })
             .setLngLat([lng, lat])
             .addTo(map.current!);
           
-          // Fly to location
+          // Fly to location (centered on the correct answer)
           map.current!.flyTo({
             center: [lng, lat],
             zoom: 15,
@@ -133,7 +133,23 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
                         }
                       });
                       
-                      console.log('Road highlighting added (blue, 4px)');
+                      // Add a smaller green marker on the road in question
+                      // Calculate a point along the road for the green marker
+                      if (route.geometry.coordinates && route.geometry.coordinates.length > 0) {
+                        // Use the middle point of the road for the green marker
+                        const midPoint = route.geometry.coordinates[Math.floor(route.geometry.coordinates.length / 2)];
+                        
+                        new mapboxgl.Marker({ 
+                          color: '#10B981', // Green color
+                          scale: 0.7 // Smaller size (70% of normal marker size)
+                        })
+                          .setLngLat(midPoint)
+                          .addTo(map.current!);
+                        
+                        console.log('Green marker added on road at:', midPoint);
+                      }
+                      
+                      console.log('Road highlighting added (blue, 4px) + green marker');
                     }
                   })
                   .catch(err => console.log('Error getting road geometry:', err));
