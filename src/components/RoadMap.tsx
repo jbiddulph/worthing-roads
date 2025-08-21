@@ -85,6 +85,62 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
             duration: 1500
           });
           
+          // Add road highlighting
+          const cleanRoadName = roadName.replace(/\s+/g, ' ').trim();
+          const searchRoadQuery = `${cleanRoadName}, Worthing, UK`;
+          
+          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchRoadQuery)}.json?access_token=${token}&country=GB&types=address&limit=1`)
+            .then(res => res.json())
+            .then(roadData => {
+              if (roadData.features && roadData.features.length > 0) {
+                const roadFeature = roadData.features[0];
+                
+                // Get road geometry from Mapbox Directions API for highlighting
+                fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${roadFeature.center[0]},${roadFeature.center[1]};${roadFeature.center[0] + 0.001},${roadFeature.center[1] + 0.001}?geometries=geojson&access_token=${token}`)
+                  .then(res => res.json())
+                  .then(directionsData => {
+                    if (directionsData.routes && directionsData.routes.length > 0) {
+                      const route = directionsData.routes[0];
+                      
+                      // Remove existing road highlighting
+                      if (map.current!.getSource('highlighted-road')) {
+                        map.current!.removeLayer('highlighted-road-layer');
+                        map.current!.removeSource('highlighted-road');
+                      }
+                      
+                      // Add the road source and layer with blue highlighting
+                      map.current!.addSource('highlighted-road', {
+                        type: 'geojson',
+                        data: {
+                          type: 'Feature',
+                          properties: {},
+                          geometry: route.geometry
+                        }
+                      });
+                      
+                      map.current!.addLayer({
+                        id: 'highlighted-road-layer',
+                        type: 'line',
+                        source: 'highlighted-road',
+                        layout: {
+                          'line-join': 'round',
+                          'line-cap': 'round'
+                        },
+                        paint: {
+                          'line-color': '#3B82F6', // Solid blue
+                          'line-width': 4, // 4px stroke
+                          'line-opacity': 1.0 // Solid (no transparency)
+                        }
+                      });
+                      
+                      console.log('Road highlighting added (blue, 4px)');
+                    }
+                  })
+                  .catch(err => console.log('Error getting road geometry:', err));
+              }
+            })
+            .catch(err => console.log('Error highlighting road:', err));
+          
           console.log('Map updated successfully');
         } else {
           console.log('No location found for:', roadName);
