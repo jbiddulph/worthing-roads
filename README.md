@@ -5,8 +5,8 @@ A comprehensive interactive quiz application that tests your knowledge of Worthi
 ## ✨ Features
 
 - **Two-Part Quiz System**: 
-  - **Part 1**: 540+ questions from the original road network
-  - **Part 2**: 100+ additional advanced questions
+  - **Part 1**: 100+ questions from the original road network
+  - **Part 2**: 100+ additional road network questions
 - **Interactive Quiz Interface**: Multiple choice questions with immediate feedback
 - **Interactive Maps**: Shows the location of correct answers using Mapbox
 - **Timer & Scoring**: Track your performance and completion time
@@ -44,7 +44,7 @@ worthing-roads/
 │       └── RoadQuizPart2.tsx  # Part 2 quiz component
 ├── public/
 │   ├── roads.json            # Complete list of Worthing roads
-│   ├── junctions.json        # Part 1 junction data (540+ questions)
+│   ├── junctions.json        # Part 1 junction data (100+ questions)
 │   └── junctions_part2.json  # Part 2 junction data (100+ questions)
 ├── data/
 │   └── roads.json            # Source road data

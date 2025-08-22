@@ -6,10 +6,11 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface RoadMapProps {
   roadName: string;
+  mainRoad: string;
   isVisible: boolean;
 }
 
-export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
+export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [loading, setLoading] = useState(false);
@@ -85,7 +86,7 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
             duration: 1500
           });
           
-          // Add road highlighting
+          // Add road highlighting for the correct answer road (blue)
           const cleanRoadName = roadName.replace(/\s+/g, ' ').trim();
           const searchRoadQuery = `${cleanRoadName}, Worthing, UK`;
           
@@ -133,29 +134,51 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
                         }
                       });
                       
-                      // Add a smaller green marker on the road in question
-                      // Calculate a point along the road for the green marker
-                      if (route.geometry.coordinates && route.geometry.coordinates.length > 0) {
-                        // Use the middle point of the road for the green marker
-                        const midPoint = route.geometry.coordinates[Math.floor(route.geometry.coordinates.length / 2)];
-                        
-                        new mapboxgl.Marker({ 
-                          color: '#10B981', // Green color
-                          scale: 0.7 // Smaller size (70% of normal marker size)
-                        })
-                          .setLngLat(midPoint)
-                          .addTo(map.current!);
-                        
-                        console.log('Green marker added on road at:', midPoint);
-                      }
-                      
-                      console.log('Road highlighting added (blue, 4px) + green marker');
+                      console.log('Road highlighting added (blue, 4px) for correct answer road');
                     }
                   })
                   .catch(err => console.log('Error getting road geometry:', err));
               }
             })
             .catch(err => console.log('Error highlighting road:', err));
+          
+          // Now add green marker on the main road from the question
+          const cleanMainRoadName = mainRoad.replace(/\s+/g, ' ').trim();
+          const searchMainRoadQuery = `${cleanMainRoadName}, Worthing, UK`;
+          
+          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchMainRoadQuery)}.json?access_token=${token}&country=GB&types=address&limit=1`)
+            .then(res => res.json())
+            .then(mainRoadData => {
+              if (mainRoadData.features && mainRoadData.features.length > 0) {
+                const mainRoadFeature = mainRoadData.features[0];
+                
+                // Get road geometry from Mapbox Directions API for the main road
+                fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${mainRoadFeature.center[0]},${mainRoadFeature.center[1]};${mainRoadFeature.center[0] + 0.001},${mainRoadFeature.center[1] + 0.001}?geometries=geojson&access_token=${token}`)
+                  .then(res => res.json())
+                  .then(mainRoadDirectionsData => {
+                    if (mainRoadDirectionsData.routes && mainRoadDirectionsData.routes.length > 0) {
+                      const mainRoadRoute = mainRoadDirectionsData.routes[0];
+                      
+                      // Add a smaller green marker on the main road from the question
+                      if (mainRoadRoute.geometry.coordinates && mainRoadRoute.geometry.coordinates.length > 0) {
+                        // Use the middle point of the main road for the green marker
+                        const mainRoadMidPoint = mainRoadRoute.geometry.coordinates[Math.floor(mainRoadRoute.geometry.coordinates.length / 2)];
+                        
+                        new mapboxgl.Marker({ 
+                          color: '#10B981', // Green color
+                          scale: 0.7 // Smaller size (70% of normal marker size)
+                        })
+                          .setLngLat(mainRoadMidPoint)
+                          .addTo(map.current!);
+                        
+                        console.log('Green marker added on main road (question road) at:', mainRoadMidPoint);
+                      }
+                    }
+                  })
+                  .catch(err => console.log('Error getting main road geometry:', err));
+              }
+            })
+            .catch(err => console.log('Error highlighting main road:', err));
           
           console.log('Map updated successfully');
         } else {
@@ -167,7 +190,7 @@ export default function RoadMap({ roadName, isVisible }: RoadMapProps) {
         console.error('Error searching for road:', err);
         setLoading(false);
       });
-  }, [roadName, isVisible]);
+  }, [roadName, mainRoad, isVisible]);
 
   // Cleanup
   useEffect(() => {

@@ -324,6 +324,7 @@ export default function RoadQuizPart2() {
       {correctRoadName && (
         <RoadMap 
           roadName={correctRoadName} 
+          mainRoad={currentQuestion.question.match(/with (.+?)\?/)?.[1] || ''}
           isVisible={!!selectedAnswer} 
         />
       )}

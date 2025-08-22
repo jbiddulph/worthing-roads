@@ -15,7 +15,7 @@ interface RoadQuestion {
 
 type JunctionMap = Record<string, string[]>;
 
-export default function RoadQuiz() {
+export default function RoadQuizPart3() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState('');
@@ -35,7 +35,7 @@ export default function RoadQuiz() {
       try {
         const [roadsRes, junctionsRes] = await Promise.all([
           fetch('/roads.json'),
-          fetch('/junctions.json')
+          fetch('/junctions_part3.json')
         ]);
         const roadsData: Road[] = await roadsRes.json();
         const junctions: JunctionMap = await junctionsRes.json();
@@ -130,7 +130,7 @@ export default function RoadQuiz() {
           [built[i], built[j]] = [built[j], built[i]];
         }
 
-        console.log(`Generated ${built.length} questions from ${entries.length} junction entries`);
+        console.log(`Generated ${built.length} questions from ${entries.length} junction entries for Part 3`);
         setQuestions(built);
       } catch (e) {
         console.error(e);
@@ -140,6 +140,8 @@ export default function RoadQuiz() {
     };
     load();
   }, []);
+
+
 
   // Trigger confetti when quiz is completed
   useEffect(() => {
@@ -172,13 +174,13 @@ export default function RoadQuiz() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">Loading road quiz…</div>
+      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">Loading Road Quiz Part 3…</div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">No questions available.</div>
+      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">No questions available for Part 3.</div>
     );
   }
 
@@ -243,7 +245,7 @@ export default function RoadQuiz() {
     
     return (
       <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Road Knowledge Quiz Part 1 Complete!</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Road Knowledge Quiz Part 3 Complete!</h2>
         <div className="text-center mb-6">
           <p className="text-lg text-gray-600 mb-2">Total questions answered: {questionsAnswered}</p>
           <p className="text-lg text-gray-600 mb-2">Score: {score} out of {questions.length}</p>
@@ -278,7 +280,7 @@ export default function RoadQuiz() {
           </div>
         </div>
         <div className="text-center">
-          <button onClick={handleRestartQuiz} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">Restart Quiz</button>
+          <button onClick={handleRestartQuiz} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">Restart Quiz Part 3</button>
         </div>
       </div>
     );
