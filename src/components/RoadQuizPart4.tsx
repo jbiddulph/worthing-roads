@@ -358,7 +358,7 @@ export default function RoadQuizPart4() {
     return (
       <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">
         <h2 className="text-xl font-bold mb-4">No Questions Available</h2>
-        <p className="text-gray-600">There are no questions available for this quiz part.</p>
+        <p className="text-gray-800">There are no questions available for this quiz part.</p>
       </div>
     );
   }
@@ -424,8 +424,8 @@ export default function RoadQuizPart4() {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-center mb-2">Road Quiz Part 4</h1>
-        <p className="text-center text-gray-600 mb-4">
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">Road Quiz Part 4</h1>
+        <p className="text-center text-gray-800 mb-4">
           Question {currentQuestionIndex + 1} of {questions.length}
         </p>
         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -434,14 +434,14 @@ export default function RoadQuizPart4() {
             style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
           ></div>
         </div>
-        <div className="flex justify-between text-sm text-gray-600 mt-2">
+        <div className="flex justify-between text-sm text-gray-800 mt-2">
           <span>Score: {score}</span>
           <span>{Math.round((score / questions.length) * 100)}%</span>
         </div>
       </div>
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-4">{currentQuestion.question}</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">{currentQuestion.question}</h2>
         <div className="space-y-3">
           {(['a', 'b', 'c', 'd'] as const).map((option) => (
             <button
@@ -460,8 +460,8 @@ export default function RoadQuizPart4() {
                   : 'border-gray-300 bg-gray-100'
               }`}
             >
-              <span className="font-semibold mr-2">{option.toUpperCase()}.</span>
-              {currentQuestion.options[option]}
+              <span className="font-semibold mr-2 text-gray-800">{option.toUpperCase()}.</span>
+              <span className="text-gray-800">{currentQuestion.options[option]}</span>
             </button>
           ))}
         </div>

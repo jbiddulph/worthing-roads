@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import mapboxgl from 'mapbox-gl';
 
-interface RoadQuestion {
+interface POIQuestion {
   id: number;
   question: string;
   options: {
@@ -19,12 +19,12 @@ interface RoadQuestion {
 
 interface RoadMapProps {
   roadName: string;
-  mainRoad: string;
+  poiName: string;
   isVisible: boolean;
 }
 
 // Road Map Component
-function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps) {
+function RoadMap({ roadName, poiName, isVisible }: RoadMapProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mapExists, setMapExists] = useState(false);
@@ -32,7 +32,7 @@ function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps) {
   const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
-    console.log('RoadMap render:', { isVisible, roadName, loading, error, mapExists, mainRoad });
+    console.log('RoadMap render:', { isVisible, roadName, loading, error, mapExists, poiName });
     
     if (!isVisible || !roadName) {
       console.log('RoadMap: Not visible or no road name, skipping');
@@ -156,45 +156,7 @@ function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps) {
         setError('Error finding road location');
       });
 
-    // Now add green marker on the main road from the question
-    const cleanMainRoadName = mainRoad.replace(/\s+/g, ' ').trim();
-    const searchMainRoadQuery = `${cleanMainRoadName}, Worthing, UK`;
-
-    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchMainRoadQuery)}.json?access_token=${token}&country=GB&types=address&limit=1`)
-      .then(res => res.json())
-      .then(mainRoadData => {
-        if (mainRoadData.features && mainRoadData.features.length > 0) {
-          const mainRoadFeature = mainRoadData.features[0];
-
-          // Get road geometry from Mapbox Directions API for the main road
-          fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${mainRoadFeature.center[0]},${mainRoadFeature.center[1]};${mainRoadFeature.center[0] + 0.001},${mainRoadFeature.center[1] + 0.001}?geometries=geojson&access_token=${token}`)
-            .then(res => res.json())
-            .then(mainRoadDirectionsData => {
-              if (mainRoadDirectionsData.routes && mainRoadDirectionsData.routes.length > 0) {
-                const mainRoadRoute = mainRoadDirectionsData.routes[0];
-
-                // Add a smaller green marker on the main road from the question
-                if (mainRoadRoute.geometry.coordinates && mainRoadRoute.geometry.coordinates.length > 0) {
-                  // Use the middle point of the main road for the green marker
-                  const mainRoadMidPoint = mainRoadRoute.geometry.coordinates[Math.floor(mainRoadRoute.geometry.coordinates.length / 2)];
-
-                  new mapboxgl.Marker({
-                    color: '#10B981', // Green color
-                    scale: 0.7 // Smaller size (70% of normal marker size)
-                  })
-                    .setLngLat(mainRoadMidPoint)
-                    .addTo(map.current!);
-
-                  console.log('Green marker added on main road (question road) at:', mainRoadMidPoint);
-                }
-              }
-            })
-            .catch(err => console.log('Error getting main road geometry:', err));
-        }
-      })
-      .catch(err => console.log('Error highlighting main road:', err));
-
-  }, [isVisible, roadName, mapExists, mainRoad]);
+  }, [isVisible, roadName, mapExists, poiName]);
 
   if (!isVisible) {
     return null;
@@ -220,9 +182,11 @@ function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps) {
   );
 }
 
-export default function RoadQuizPart5() {
-  const [questions, setQuestions] = useState<RoadQuestion[]>([]);
+export default function POIQuiz() {
+  const [questions, setQuestions] = useState<POIQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  
+
   const [selectedAnswer, setSelectedAnswer] = useState<'a' | 'b' | 'c' | 'd' | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
@@ -240,78 +204,78 @@ export default function RoadQuizPart5() {
         const roadsData = await roadsResponse.json();
         const roadNames = new Set(roadsData.map((road: { road_name: string }) => road.road_name));
 
-        // Load junctions data
-        const junctionsResponse = await fetch('/junctions_part5.json');
-        const junctionsData = await junctionsResponse.json();
-        const entries = Object.entries(junctionsData);
+        // Load POI data with actual road locations
+        const poiResponse = await fetch('/poi_roads.json');
+        const poiRoadsData = await poiResponse.json() as Record<string, string>;
 
         // Helper function to get distractors
-        const getDistractors = (mainRoad: string, correct: string, count: number) => {
-          const allSmallerRoads = new Set<string>();
+        const getDistractors = (correctRoad: string, count: number) => {
+          const allRoadsArray = Array.from(roadNames);
           
-          // Collect all smaller roads from all main roads
-          entries.forEach(([, smallerRoadList]) => {
-            if (Array.isArray(smallerRoadList)) {
-              (smallerRoadList as string[]).forEach(road => allSmallerRoads.add(road));
-            }
-          });
-
-          // Remove the correct answer and the main road
-          allSmallerRoads.delete(correct);
-          allSmallerRoads.delete(mainRoad);
-
-          // Convert to array and shuffle
-          const allRoadsArray = Array.from(allSmallerRoads);
-          for (let i = allRoadsArray.length - 1; i > 0; i--) {
+          // Remove the correct answer
+          const filteredRoads = allRoadsArray.filter(road => road !== correctRoad);
+          
+          // Shuffle and take the required number
+          for (let i = filteredRoads.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [allRoadsArray[i], allRoadsArray[j]] = [allRoadsArray[j], allRoadsArray[i]];
+            [filteredRoads[i], filteredRoads[j]] = [filteredRoads[j], filteredRoads[i]];
           }
 
-          return allRoadsArray.slice(0, count);
+          return filteredRoads.slice(0, count);
         };
 
-        const built: RoadQuestion[] = [];
+        const built: POIQuestion[] = [];
         let id = 1;
-        for (const [mainRoad, smallerRoadList] of entries) {
-          // pick one correct smaller road from the curated list that exists in roads
-          const validSmallerRoads = (smallerRoadList as string[]).filter((s: string) => roadNames.has(s));
-          if (validSmallerRoads.length === 0) continue;
-          const correct = validSmallerRoads[Math.floor(Math.random() * validSmallerRoads.length)];
 
-          // pick 3 distractors - these should be other smaller roads that could junction off the main road
-          const distractors = getDistractors(mainRoad, correct, 3);
-          if (distractors.length < 3) continue;
+        // For each POI, use the actual road location from the data
+        for (const [poiName, correctRoad] of Object.entries(poiRoadsData)) {
+          // Verify the correct road exists in our roads data
+          if (!roadNames.has(correctRoad as string)) {
+            console.warn(`Road "${correctRoad}" for POI "${poiName}" not found in roads.json`);
+            continue;
+          }
 
-          // combine and shuffle options
-          const optionsArray = [correct, ...distractors];
+          // Get 3 distractors (other roads that are not the correct answer)
+          const distractors = getDistractors(correctRoad, 3);
+
+          // Combine and shuffle options
+          const optionsArray = [correctRoad, ...distractors];
           for (let i = optionsArray.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [optionsArray[i], optionsArray[j]] = [optionsArray[j], optionsArray[i]];
           }
 
           const keyMap: Array<'a' | 'b' | 'c' | 'd'> = ['a', 'b', 'c', 'd'];
-          const correctIndex = optionsArray.indexOf(correct);
+          const correctIndex = optionsArray.indexOf(correctRoad);
           const correctKey = keyMap[correctIndex];
 
           built.push({
             id: id++,
-            question: `Which of these forms a junction with ${mainRoad}?`,
-            options: { a: optionsArray[0], b: optionsArray[1], c: optionsArray[2], d: optionsArray[3] },
+            question: `Which road is ${poiName} located on?`,
+            options: { 
+              a: optionsArray[0] as string, 
+              b: optionsArray[1] as string, 
+              c: optionsArray[2] as string, 
+              d: optionsArray[3] as string 
+            },
             correctAnswer: correctKey,
-            explanation: `${correct} junctions off ${mainRoad}.`
+            explanation: `${poiName} is located on ${correctRoad}.`
           });
         }
 
-        // Shuffle questions and use all available questions
+        // Shuffle questions
         for (let i = built.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [built[i], built[j]] = [built[j], built[i]];
         }
 
-        console.log(`Generated ${built.length} questions from ${entries.length} junction entries for Part 5`);
         setQuestions(built);
       } catch (e) {
-        console.error(e);
+        console.error('Error in POI quiz data loading:', e);
+        console.error('Error details:', {
+          message: e instanceof Error ? e.message : 'Unknown error',
+          stack: e instanceof Error ? e.stack : 'No stack trace'
+        });
       } finally {
         setLoading(false);
       }
@@ -350,7 +314,7 @@ export default function RoadQuizPart5() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">Loading Road Quiz Part 5…</div>
+      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">Loading POI Quiz…</div>
     );
   }
 
@@ -358,7 +322,7 @@ export default function RoadQuizPart5() {
     return (
       <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">
         <h2 className="text-xl font-bold mb-4">No Questions Available</h2>
-        <p className="text-gray-800">There are no questions available for this quiz part.</p>
+        <p className="text-gray-600">There are no questions available for this quiz.</p>
       </div>
     );
   }
@@ -424,7 +388,7 @@ export default function RoadQuizPart5() {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">Road Quiz Part 5</h1>
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">POI Road Location Quiz</h1>
         <p className="text-center text-gray-800 mb-4">
           Question {currentQuestionIndex + 1} of {questions.length}
         </p>
@@ -492,7 +456,7 @@ export default function RoadQuizPart5() {
       {correctRoadName && (
         <RoadMap 
           roadName={correctRoadName} 
-          mainRoad={currentQuestion.question.match(/with (.+?)\?/)?.[1] || ''}
+          poiName={currentQuestion.question.match(/Which road is (.+?) located on\?/)?.[1] || ''}
           isVisible={!!selectedAnswer} 
         />
       )}

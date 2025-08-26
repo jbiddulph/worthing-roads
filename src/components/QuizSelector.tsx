@@ -7,9 +7,10 @@ import RoadQuizPart3 from './RoadQuizPart3';
 import RoadQuizPart4 from './RoadQuizPart4';
 import RoadQuizPart5 from './RoadQuizPart5';
 import RoadQuizPart6 from './RoadQuizPart6';
+import POIQuiz from './POIQuiz';
 
 export default function QuizSelector() {
-  const [selectedQuiz, setSelectedQuiz] = useState<'none' | 'part1' | 'part2' | 'part3' | 'part4' | 'part5' | 'part6'>('none');
+  const [selectedQuiz, setSelectedQuiz] = useState<'none' | 'part1' | 'part2' | 'part3' | 'part4' | 'part5' | 'part6' | 'poi'>('none');
 
   if (selectedQuiz === 'part1') {
     return (
@@ -103,6 +104,22 @@ export default function QuizSelector() {
           </button>
         </div>
         <RoadQuizPart6 />
+      </div>
+    );
+  }
+
+  if (selectedQuiz === 'poi') {
+    return (
+      <div>
+        <div className="mb-6 text-center">
+          <button 
+            onClick={() => setSelectedQuiz('none')}
+            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors mb-4"
+          >
+            ← Back to Quiz Selection
+          </button>
+        </div>
+        <POIQuiz />
       </div>
     );
   }
@@ -204,10 +221,24 @@ export default function QuizSelector() {
             Start Part 6
           </button>
         </div> */}
+
+        <div className="border-2 border-pink-200 rounded-lg p-6 hover:border-pink-400 transition-colors cursor-pointer bg-pink-50 hover:bg-pink-100" onClick={() => setSelectedQuiz('poi')}>
+          <h2 className="text-2xl font-bold text-pink-800 mb-3">POI Quiz</h2>
+          <p className="text-gray-700 mb-4">
+            Test your knowledge of where Worthing&apos;s Points of Interest are located.
+          </p>
+          <div className="text-sm text-pink-600 font-medium">
+            • 67 POI questions<br/>
+            • Road location knowledge<br/>
+          </div>
+          <button className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+            Start POI Quiz
+          </button>
+        </div>
       </div>
 
       <div className="mt-8 text-center text-sm text-gray-500">
-        <p>All five quiz parts include timing, scoring, and confetti celebrations!</p>
+        <p>All quiz parts include timing, scoring, and confetti celebrations!</p>
       </div>
     </div>
   );
