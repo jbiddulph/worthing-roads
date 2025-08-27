@@ -208,7 +208,7 @@ export default function QuizSelector() {
           </button>
         </div>
 
-        {/* <div className="border-2 border-indigo-200 rounded-lg p-6 hover:border-indigo-400 transition-colors cursor-pointer bg-indigo-50 hover:bg-indigo-100" onClick={() => setSelectedQuiz('part6')}>
+        <div className="border-2 border-indigo-200 rounded-lg p-6 hover:border-indigo-400 transition-colors cursor-pointer bg-indigo-50 hover:bg-indigo-100" onClick={() => setSelectedQuiz('part6')}>
           <h2 className="text-2xl font-bold text-indigo-800 mb-3">Part 6</h2>
           <p className="text-gray-700 mb-4">
             European-themed road junction questions.
@@ -220,7 +220,7 @@ export default function QuizSelector() {
           <button className="mt-4 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
             Start Part 6
           </button>
-        </div> */}
+        </div>
 
         <div className="border-2 border-pink-200 rounded-lg p-6 hover:border-pink-400 transition-colors cursor-pointer bg-pink-50 hover:bg-pink-100" onClick={() => setSelectedQuiz('poi')}>
           <h2 className="text-2xl font-bold text-pink-800 mb-3">POI Quiz</h2>
