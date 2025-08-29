@@ -74,7 +74,7 @@ worthing-roads/
 3. **Set up Mapbox (Optional - for map functionality)**
    - Get a free Mapbox token from [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/)
    - Create a `.env` file in the root directory
-   - Add your token: `MAPBOX_TOKEN=your_mapbox_token_here`
+   - Add your token: `NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here`
 
 4. **Run the development server**
    ```bash
