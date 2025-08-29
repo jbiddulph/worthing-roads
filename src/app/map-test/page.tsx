@@ -17,6 +17,7 @@ export default function MapTest() {
   const [actualMarker, setActualMarker] = useState<mapboxgl.Marker | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [roads, setRoads] = useState<Road[]>([]);
+  const [showRoadNames, setShowRoadNames] = useState(true); // State to control road names visibility
 
   // Function to select a random road
   const selectRandomRoad = useCallback(() => {
@@ -181,12 +182,38 @@ export default function MapTest() {
 
     map.current.on('load', () => {
       console.log('Map loaded successfully');
+      // Set initial road names visibility
+      toggleRoadNames(showRoadNames);
     });
 
     map.current.on('error', (e) => {
       console.error('Map error:', e);
     });
   }, []);
+
+  // Toggle road names visibility
+  const toggleRoadNames = useCallback((show: boolean) => {
+    if (!map.current) return;
+    
+    try {
+      if (show) {
+        // Show road names by setting visibility to visible
+        map.current.setLayoutProperty('road-label', 'visibility', 'visible');
+      } else {
+        // Hide road names by setting visibility to none
+        map.current.setLayoutProperty('road-label', 'visibility', 'none');
+      }
+    } catch (error) {
+      console.log('Road names layer not available yet, will apply on next map update');
+    }
+  }, []);
+
+  // Update road names when toggle changes
+  useEffect(() => {
+    if (map.current) {
+      toggleRoadNames(showRoadNames);
+    }
+  }, [showRoadNames, toggleRoadNames]);
 
   // Add click event listener
   useEffect(() => {
@@ -217,6 +244,12 @@ export default function MapTest() {
               Find: {selectedRoad}
             </h1>
           </div>
+          <button
+            onClick={() => setShowRoadNames(!showRoadNames)}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+          >
+            {showRoadNames ? 'Hide Road Names' : 'Show Road Names'}
+          </button>
           <button
             onClick={getNewRoad}
             className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
