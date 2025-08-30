@@ -153,6 +153,18 @@ export default function MapTest() {
         const distanceInMiles = calculateDistance(lat, lng, actualLat, actualLng);
         setDistance(distanceInMiles);
         
+        // Check if user is within 0.15 miles and trigger confetti
+        if (distanceInMiles <= 0.15) {
+          // Import confetti dynamically to avoid SSR issues
+          import('canvas-confetti').then((confetti) => {
+            confetti.default({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 }
+            });
+          });
+        }
+        
         // Draw line between markers
         drawLine([lng, lat], [actualLng, actualLat]);
       }

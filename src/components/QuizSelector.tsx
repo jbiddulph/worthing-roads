@@ -7,10 +7,11 @@ import RoadQuizPart3 from './RoadQuizPart3';
 import RoadQuizPart4 from './RoadQuizPart4';
 import RoadQuizPart5 from './RoadQuizPart5';
 import RoadQuizPart6 from './RoadQuizPart6';
+import RoadQuizPart7 from './RoadQuizPart7';
 import POIQuiz from './POIQuiz';
 
 export default function QuizSelector() {
-  const [selectedQuiz, setSelectedQuiz] = useState<'none' | 'part1' | 'part2' | 'part3' | 'part4' | 'part5' | 'part6' | 'poi'>('none');
+  const [selectedQuiz, setSelectedQuiz] = useState<'none' | 'part1' | 'part2' | 'part3' | 'part4' | 'part5' | 'part6' | 'part7' | 'poi'>('none');
 
   if (selectedQuiz === 'part1') {
     return (
@@ -104,6 +105,22 @@ export default function QuizSelector() {
           </button>
         </div>
         <RoadQuizPart6 />
+      </div>
+    );
+  }
+
+  if (selectedQuiz === 'part7') {
+    return (
+      <div>
+        <div className="mb-6 text-center">
+          <button 
+            onClick={() => setSelectedQuiz('none')}
+            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors mb-4"
+          >
+            ← Back to Quiz Selection
+          </button>
+        </div>
+        <RoadQuizPart7 />
       </div>
     );
   }
@@ -222,16 +239,30 @@ export default function QuizSelector() {
           </button>
         </div>
 
-        <div className="border-2 border-pink-200 rounded-lg p-6 hover:border-pink-400 transition-colors cursor-pointer bg-pink-50 hover:bg-pink-100" onClick={() => setSelectedQuiz('poi')}>
-          <h2 className="text-2xl font-bold text-pink-800 mb-3">POI Quiz</h2>
+        <div className="border-2 border-pink-200 rounded-lg p-6 hover:border-pink-400 transition-colors cursor-pointer bg-pink-50 hover:bg-pink-100" onClick={() => setSelectedQuiz('part7')}>
+          <h2 className="text-2xl font-bold text-pink-800 mb-3">Part 7</h2>
+          <p className="text-gray-700 mb-4">
+            New road junction questions from the Shoreham area.
+          </p>
+          <div className="text-sm text-pink-600 font-medium">
+            • 50 new questions<br/>
+            • Shoreham area roads<br/>
+          </div>
+          <button className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+            Start Part 7
+          </button>
+        </div>
+
+        <div className="border-2 border-gray-200 rounded-lg p-6 hover:border-gray-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100" onClick={() => setSelectedQuiz('poi')}>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">POI Quiz</h2>
           <p className="text-gray-700 mb-4">
             Test your knowledge of where Worthing&apos;s Points of Interest are located.
           </p>
-          <div className="text-sm text-pink-600 font-medium">
+          <div className="text-sm text-gray-600 font-medium">
             • 67 POI questions<br/>
             • Road location knowledge<br/>
           </div>
-          <button className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+          <button className="mt-4 w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
             Start POI Quiz
           </button>
         </div>
