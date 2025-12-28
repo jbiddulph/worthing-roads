@@ -20,7 +20,7 @@ export default function MapTest() {
   const [distance, setDistance] = useState<number | null>(null);
   const [roads, setRoads] = useState<Road[]>([]);
   const [showRoadNames, setShowRoadNames] = useState(true); // State to control road names visibility
-  const { town, setTown } = useTown();
+  const { town, setTown, hasStoredTown } = useTown();
   const [townQuery, setTownQuery] = useState(town.label);
   const [townLoading, setTownLoading] = useState(false);
   const [townError, setTownError] = useState<string>('');
@@ -114,7 +114,7 @@ export default function MapTest() {
   );
 
   const applyTown = useCallback(
-    async (nextTown: TownSelection) => {
+    (nextTown: TownSelection) => {
       setTown(nextTown);
       setTownQuery(nextTown.label);
       resetRoundState();
@@ -126,10 +126,8 @@ export default function MapTest() {
           duration: 900,
         });
       }
-
-      await loadRoadsForTown(nextTown);
     },
-    [loadRoadsForTown, resetRoundState, setTown]
+    [resetRoundState, setTown]
   );
 
   // Load roads when town changes (includes stored town from homepage)
@@ -140,6 +138,8 @@ export default function MapTest() {
   // On first load, try to detect the user's current UK town and switch to it.
   useEffect(() => {
     let cancelled = false;
+    // If the user already picked a town (homepage/map-test), don't override it here.
+    if (hasStoredTown) return;
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) return;
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
@@ -170,7 +170,7 @@ export default function MapTest() {
             bbox: (feature.bbox as [number, number, number, number] | undefined) ?? undefined,
           };
 
-          await applyTown(detectedTown);
+          applyTown(detectedTown);
           setAutoTownMessage(`Using your town: ${detectedTown.label}`);
         } catch (e) {
           console.error('Failed to detect town:', e);
@@ -187,7 +187,7 @@ export default function MapTest() {
     return () => {
       cancelled = true;
     };
-  }, [applyTown]);
+  }, [applyTown, hasStoredTown]);
 
   // Calculate distance between two points in miles
   const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -392,7 +392,7 @@ export default function MapTest() {
           bbox: (feature.bbox as [number, number, number, number] | undefined) ?? undefined,
         };
 
-        await applyTown(nextTown);
+        applyTown(nextTown);
       } catch (e) {
         setTownError(e instanceof Error ? e.message : String(e));
       } finally {
