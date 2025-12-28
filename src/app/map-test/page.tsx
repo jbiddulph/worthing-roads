@@ -364,9 +364,8 @@ export default function MapTest() {
     <div className="h-screen flex flex-col">
       {/* Road name header */}
       <div className="bg-white shadow-md p-4 z-10">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <Link
               href="/"
               className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
@@ -377,81 +376,54 @@ export default function MapTest() {
               Find: {selectedRoad}
             </h1>
           </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setShowRoadNames(!showRoadNames)}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-              >
-                {showRoadNames ? 'Hide Road Names' : 'Show Road Names'}
-              </button>
-              <button
-                onClick={getNewRoad}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                disabled={roads.length === 0}
-                title={roads.length === 0 ? 'No roads loaded for this town yet' : 'Pick a new road'}
-              >
-                🎲 New Road
-              </button>
-            </div>
-          </div>
 
-          <form
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void searchAndSetTown(townQuery);
-            }}
-          >
-            <div className="flex items-center gap-2 flex-1">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            <button
+              onClick={() => setShowRoadNames(!showRoadNames)}
+              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+            >
+              {showRoadNames ? 'Hide Road Names' : 'Show Road Names'}
+            </button>
+
+            <button
+              onClick={getNewRoad}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              disabled={roads.length === 0}
+              title={roads.length === 0 ? 'No roads loaded for this town yet' : 'Pick a new road'}
+            >
+              🎲 New Road
+            </button>
+
+            <form
+              className="flex items-center gap-2 w-full sm:w-auto"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void searchAndSetTown(townQuery);
+              }}
+            >
               <span className="text-sm text-gray-700 whitespace-nowrap">Town (UK):</span>
               <input
                 value={townQuery}
                 onChange={(e) => setTownQuery(e.target.value)}
-                placeholder="e.g. Worthing, Rochdale, Romford"
-                className="w-full sm:w-96 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                placeholder="Worthing (default)"
+                className="w-full sm:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm"
               />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-60"
-              disabled={townLoading || townQuery.trim().length === 0}
-            >
-              {townLoading ? 'Searching…' : 'Search'}
-            </button>
-            <div className="flex flex-wrap gap-2">
               <button
-                type="button"
-                onClick={() => void searchAndSetTown('Worthing')}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-60"
+                disabled={townLoading || townQuery.trim().length === 0}
               >
-                Worthing
+                {townLoading ? 'Searching…' : 'Search'}
               </button>
-              <button
-                type="button"
-                onClick={() => void searchAndSetTown('Rochdale')}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
-              >
-                Rochdale
-              </button>
-              <button
-                type="button"
-                onClick={() => void searchAndSetTown('Romford')}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
-              >
-                Romford
-              </button>
-            </div>
-          </form>
-
-          <div className="text-sm text-gray-700">
-            Town: <span className="font-semibold">{town.label}</span>
-            <span className="text-gray-500"> — {town.displayName}</span>
-            {roads.length > 0 && (
-              <span className="text-gray-500"> (roads loaded: {roads.length})</span>
-            )}
+            </form>
           </div>
-          {townError && <div className="text-sm text-red-600">{townError}</div>}
         </div>
+
+        <div className="mt-2 text-sm text-gray-700">
+          Town: <span className="font-semibold">{town.label}</span>
+          {roads.length > 0 && <span className="text-gray-500"> (roads loaded: {roads.length})</span>}
+        </div>
+        {townError && <div className="mt-1 text-sm text-red-600">{townError}</div>}
         {distance !== null && (
           <p className="text-center text-lg text-gray-600 mt-2">
             Distance: {distance.toFixed(2)} miles
