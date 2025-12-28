@@ -4,17 +4,12 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Link from 'next/link';
+import { useTown } from '@/components/TownProvider';
+import type { TownSelection } from '@/lib/town';
 
 interface Road {
   road_name: string;
 }
-
-type TownSelection = {
-  label: string; // e.g. "Rochdale"
-  displayName: string; // e.g. "Rochdale, England, United Kingdom"
-  center: [number, number]; // [lng, lat]
-  bbox?: [number, number, number, number]; // [west, south, east, north]
-};
 
 export default function MapTest() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -25,15 +20,15 @@ export default function MapTest() {
   const [distance, setDistance] = useState<number | null>(null);
   const [roads, setRoads] = useState<Road[]>([]);
   const [showRoadNames, setShowRoadNames] = useState(true); // State to control road names visibility
-  const [town, setTown] = useState<TownSelection>({
-    label: 'Worthing',
-    displayName: 'Worthing, West Sussex, United Kingdom',
-    center: [-0.3719, 50.8179],
-  });
-  const [townQuery, setTownQuery] = useState('Worthing');
+  const { town, setTown } = useTown();
+  const [townQuery, setTownQuery] = useState(town.label);
   const [townLoading, setTownLoading] = useState(false);
   const [townError, setTownError] = useState<string>('');
   const [autoTownMessage, setAutoTownMessage] = useState<string>('');
+
+  useEffect(() => {
+    setTownQuery(town.label);
+  }, [town.label]);
 
   // Function to select a random road
   const selectRandomRoad = useCallback(() => {
@@ -134,14 +129,13 @@ export default function MapTest() {
 
       await loadRoadsForTown(nextTown);
     },
-    [loadRoadsForTown, resetRoundState]
+    [loadRoadsForTown, resetRoundState, setTown]
   );
 
-  // Initial load (Worthing)
+  // Load roads when town changes (includes stored town from homepage)
   useEffect(() => {
     void loadRoadsForTown(town);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadRoadsForTown, town]);
 
   // On first load, try to detect the user's current UK town and switch to it.
   useEffect(() => {
@@ -165,7 +159,7 @@ export default function MapTest() {
           const data = await res.json();
           const feature = data?.features?.[0];
           if (!feature?.center) {
-            setAutoTownMessage('Could not detect a UK town — staying on Worthing.');
+            setAutoTownMessage('Could not detect a UK town — staying on current town.');
             return;
           }
 
@@ -180,12 +174,12 @@ export default function MapTest() {
           setAutoTownMessage(`Using your town: ${detectedTown.label}`);
         } catch (e) {
           console.error('Failed to detect town:', e);
-          setAutoTownMessage('Could not detect your town — staying on Worthing.');
+          setAutoTownMessage('Could not detect your town — staying on current town.');
         }
       },
       () => {
         if (cancelled) return;
-        setAutoTownMessage('Location permission denied — staying on Worthing.');
+        setAutoTownMessage('Location permission denied — staying on current town.');
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 10 * 60 * 1000 }
     );
@@ -466,7 +460,7 @@ export default function MapTest() {
               <input
                 value={townQuery}
                 onChange={(e) => setTownQuery(e.target.value)}
-                placeholder="Worthing (default)"
+                placeholder="Search a UK town…"
                 className="w-full sm:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm"
               />
               <button

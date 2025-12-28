@@ -9,9 +9,12 @@ import RoadQuizPart5 from './RoadQuizPart5';
 import RoadQuizPart6 from './RoadQuizPart6';
 import RoadQuizPart7 from './RoadQuizPart7';
 import POIQuiz from './POIQuiz';
+import { useTown } from './TownProvider';
 
 export default function QuizSelector() {
   const [selectedQuiz, setSelectedQuiz] = useState<'none' | 'part1' | 'part2' | 'part3' | 'part4' | 'part5' | 'part6' | 'part7' | 'poi'>('none');
+  const { town } = useTown();
+  const poiEnabled = town.label.trim().toLowerCase() === 'worthing';
 
   if (selectedQuiz === 'part1') {
     return (
@@ -143,14 +146,17 @@ export default function QuizSelector() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">Worthing Roads Knowledge Quiz</h1>
+      <h1 className="text-3xl font-bold text-center mb-3 text-gray-800">{town.label} Roads Knowledge Quiz</h1>
+      <p className="text-center text-sm text-gray-500 mb-8">
+        Town selection comes from the homepage search / your location / the map test page.
+      </p>
       
       <div className="text-center mb-8">
                   <p className="text-lg text-gray-600 mb-4">
-            Test your knowledge of Worthing&apos;s road network! Choose a quiz part to get started.
+            Test your knowledge of {town.label}&apos;s road network! Choose a quiz part to get started.
           </p>
         <p className="text-sm text-gray-500">
-          Each part contains unique questions about road junctions in Worthing.
+          Each part contains a unique slice of junction questions for {town.label}.
         </p>
       </div>
 
@@ -172,7 +178,7 @@ export default function QuizSelector() {
         <div className="border-2 border-green-200 rounded-lg p-6 hover:border-green-400 transition-colors cursor-pointer bg-green-50 hover:bg-green-100" onClick={() => setSelectedQuiz('part2')}>
           <h2 className="text-2xl font-bold text-green-800 mb-3">Part 2</h2>
           <p className="text-gray-700 mb-4">
-            Additional questions about Worthing&apos;s road network.
+            Additional questions about {town.label}&apos;s road network.
           </p>
           <div className="text-sm text-green-600 font-medium">
             • 57 new questions<br/>
@@ -186,11 +192,11 @@ export default function QuizSelector() {
         <div className="border-2 border-purple-200 rounded-lg p-6 hover:border-purple-400 transition-colors cursor-pointer bg-purple-50 hover:bg-purple-100" onClick={() => setSelectedQuiz('part3')}>
           <h2 className="text-2xl font-bold text-purple-800 mb-3">Part 3</h2>
           <p className="text-gray-700 mb-4">
-            More road junction questions with additional Worthing roads.
+            More road junction questions for {town.label}.
           </p>
           <div className="text-sm text-purple-600 font-medium">
-            • 100+ new questions<br/>
-            • Mainly Durrington area (canada and australia)<br/>
+            • More questions<br/>
+            • Different junction slice<br/>
           </div>
           <button className="mt-4 w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
             Start Part 3
@@ -214,11 +220,11 @@ export default function QuizSelector() {
         <div className="border-2 border-teal-200 rounded-lg p-6 hover:border-teal-400 transition-colors cursor-pointer bg-teal-50 hover:bg-teal-100" onClick={() => setSelectedQuiz('part5')}>
           <h2 className="text-2xl font-bold text-teal-800 mb-3">Part 5</h2>
           <p className="text-gray-700 mb-4">
-            More road junction challenges from the Findon area.
+            More road junction challenges for {town.label}.
           </p>
           <div className="text-sm text-teal-600 font-medium">
-            • 50 new questions<br/>
-            • More roads<br/>
+            • More questions<br/>
+            • Different junction slice<br/>
           </div>
           <button className="mt-4 w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
             Start Part 5
@@ -228,11 +234,11 @@ export default function QuizSelector() {
         <div className="border-2 border-indigo-200 rounded-lg p-6 hover:border-indigo-400 transition-colors cursor-pointer bg-indigo-50 hover:bg-indigo-100" onClick={() => setSelectedQuiz('part6')}>
           <h2 className="text-2xl font-bold text-indigo-800 mb-3">Part 6</h2>
           <p className="text-gray-700 mb-4">
-            European-themed road junction questions.
+            More road junction questions for {town.label}.
           </p>
           <div className="text-sm text-indigo-600 font-medium">
-            • 100 new questions<br/>
-            • European city themes<br/>
+            • More questions<br/>
+            • Different junction slice<br/>
           </div>
           <button className="mt-4 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
             Start Part 6
@@ -242,27 +248,49 @@ export default function QuizSelector() {
         <div className="border-2 border-pink-200 rounded-lg p-6 hover:border-pink-400 transition-colors cursor-pointer bg-pink-50 hover:bg-pink-100" onClick={() => setSelectedQuiz('part7')}>
           <h2 className="text-2xl font-bold text-pink-800 mb-3">Part 7</h2>
           <p className="text-gray-700 mb-4">
-            New road junction questions from the Shoreham area.
+            More road junction questions for {town.label}.
           </p>
           <div className="text-sm text-pink-600 font-medium">
-            • 50 new questions<br/>
-            • Shoreham area roads<br/>
+            • More questions<br/>
+            • Different junction slice<br/>
           </div>
           <button className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
             Start Part 7
           </button>
         </div>
 
-        <div className="border-2 border-gray-200 rounded-lg p-6 hover:border-gray-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100" onClick={() => setSelectedQuiz('poi')}>
+        <div
+          className={`border-2 rounded-lg p-6 transition-colors cursor-pointer ${
+            poiEnabled
+              ? 'border-gray-200 hover:border-gray-400 bg-gray-50 hover:bg-gray-100'
+              : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+          }`}
+          onClick={() => {
+            if (poiEnabled) setSelectedQuiz('poi');
+          }}
+          title={poiEnabled ? 'Start POI quiz' : 'POI quiz currently only available for Worthing'}
+        >
           <h2 className="text-2xl font-bold text-gray-800 mb-3">POI Quiz</h2>
           <p className="text-gray-700 mb-4">
-            Test your knowledge of where Worthing&apos;s Points of Interest are located.
+            Test your knowledge of where {town.label}&apos;s Points of Interest are located.
           </p>
           <div className="text-sm text-gray-600 font-medium">
-            • 67 POI questions<br/>
-            • Road location knowledge<br/>
+            {poiEnabled ? (
+              <>
+                • 67 POI questions<br />
+                • Road location knowledge<br />
+              </>
+            ) : (
+              <>
+                • Available for Worthing only (for now)<br />
+                • Switch town to Worthing to play<br />
+              </>
+            )}
           </div>
-          <button className="mt-4 w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+          <button
+            className="mt-4 w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-60"
+            disabled={!poiEnabled}
+          >
             Start POI Quiz
           </button>
         </div>
