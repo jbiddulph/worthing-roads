@@ -33,6 +33,7 @@ export default function MapTest() {
   const [townQuery, setTownQuery] = useState('Worthing');
   const [townLoading, setTownLoading] = useState(false);
   const [townError, setTownError] = useState<string>('');
+  const [autoTownMessage, setAutoTownMessage] = useState<string>('');
 
   // Function to select a random road
   const selectRandomRoad = useCallback(() => {
@@ -117,11 +118,82 @@ export default function MapTest() {
     []
   );
 
+  const applyTown = useCallback(
+    async (nextTown: TownSelection) => {
+      setTown(nextTown);
+      setTownQuery(nextTown.label);
+      resetRoundState();
+
+      if (map.current) {
+        map.current.flyTo({
+          center: nextTown.center,
+          zoom: 12,
+          duration: 900,
+        });
+      }
+
+      await loadRoadsForTown(nextTown);
+    },
+    [loadRoadsForTown, resetRoundState]
+  );
+
   // Initial load (Worthing)
   useEffect(() => {
     void loadRoadsForTown(town);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // On first load, try to detect the user's current UK town and switch to it.
+  useEffect(() => {
+    let cancelled = false;
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+
+    setAutoTownMessage('Detecting your town…');
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        if (cancelled) return;
+        try {
+          const lng = pos.coords.longitude;
+          const lat = pos.coords.latitude;
+
+          const res = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&country=GB&types=place&limit=1`
+          );
+          const data = await res.json();
+          const feature = data?.features?.[0];
+          if (!feature?.center) {
+            setAutoTownMessage('Could not detect a UK town — staying on Worthing.');
+            return;
+          }
+
+          const detectedTown: TownSelection = {
+            label: feature.text || 'Your town',
+            displayName: feature.place_name || feature.text || 'Your town',
+            center: feature.center as [number, number],
+            bbox: (feature.bbox as [number, number, number, number] | undefined) ?? undefined,
+          };
+
+          await applyTown(detectedTown);
+          setAutoTownMessage(`Using your town: ${detectedTown.label}`);
+        } catch (e) {
+          console.error('Failed to detect town:', e);
+          setAutoTownMessage('Could not detect your town — staying on Worthing.');
+        }
+      },
+      () => {
+        if (cancelled) return;
+        setAutoTownMessage('Location permission denied — staying on Worthing.');
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 10 * 60 * 1000 }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyTown]);
 
   // Calculate distance between two points in miles
   const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -306,6 +378,7 @@ export default function MapTest() {
 
       setTownLoading(true);
       setTownError('');
+      setAutoTownMessage('');
       try {
         const res = await fetch(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
@@ -325,26 +398,14 @@ export default function MapTest() {
           bbox: (feature.bbox as [number, number, number, number] | undefined) ?? undefined,
         };
 
-        setTown(nextTown);
-        setTownQuery(nextTown.label);
-        resetRoundState();
-
-        if (map.current) {
-          map.current.flyTo({
-            center: nextTown.center,
-            zoom: 12,
-            duration: 900,
-          });
-        }
-
-        await loadRoadsForTown(nextTown);
+        await applyTown(nextTown);
       } catch (e) {
         setTownError(e instanceof Error ? e.message : String(e));
       } finally {
         setTownLoading(false);
       }
     },
-    [loadRoadsForTown, resetRoundState]
+    [applyTown]
   );
 
   // Add click event listener
@@ -423,6 +484,7 @@ export default function MapTest() {
           Town: <span className="font-semibold">{town.label}</span>
           {roads.length > 0 && <span className="text-gray-500"> (roads loaded: {roads.length})</span>}
         </div>
+        {autoTownMessage && <div className="mt-1 text-xs text-gray-500">{autoTownMessage}</div>}
         {townError && <div className="mt-1 text-sm text-red-600">{townError}</div>}
         {distance !== null && (
           <p className="text-center text-lg text-gray-600 mt-2">
