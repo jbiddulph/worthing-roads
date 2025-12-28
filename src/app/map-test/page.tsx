@@ -9,6 +9,13 @@ interface Road {
   road_name: string;
 }
 
+type TownSelection = {
+  label: string; // e.g. "Rochdale"
+  displayName: string; // e.g. "Rochdale, England, United Kingdom"
+  center: [number, number]; // [lng, lat]
+  bbox?: [number, number, number, number]; // [west, south, east, north]
+};
+
 export default function MapTest() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -18,6 +25,14 @@ export default function MapTest() {
   const [distance, setDistance] = useState<number | null>(null);
   const [roads, setRoads] = useState<Road[]>([]);
   const [showRoadNames, setShowRoadNames] = useState(true); // State to control road names visibility
+  const [town, setTown] = useState<TownSelection>({
+    label: 'Worthing',
+    displayName: 'Worthing, West Sussex, United Kingdom',
+    center: [-0.3719, 50.8179],
+  });
+  const [townQuery, setTownQuery] = useState('Worthing');
+  const [townLoading, setTownLoading] = useState(false);
+  const [townError, setTownError] = useState<string>('');
 
   // Function to select a random road
   const selectRandomRoad = useCallback(() => {
@@ -45,18 +60,68 @@ export default function MapTest() {
     selectRandomRoad();
   }, [selectRandomRoad]);
 
-  // Load roads data and select first road only once
+  const resetRoundState = useCallback(() => {
+    setDistance(null);
+    if (userMarker) userMarker.remove();
+    if (actualMarker) actualMarker.remove();
+    setUserMarker(null);
+    setActualMarker(null);
+    if (map.current?.getSource('line')) {
+      map.current.removeLayer('line');
+      map.current.removeSource('line');
+    }
+  }, [userMarker, actualMarker]);
+
+  const loadRoadsForTown = useCallback(
+    async (t: TownSelection) => {
+      // Prefer existing Worthing dataset for speed & offline-ish behaviour
+      const isWorthing = t.label.trim().toLowerCase() === 'worthing';
+      try {
+        if (isWorthing) {
+          const res = await fetch('/roads.json');
+          const data = (await res.json()) as Road[];
+          setRoads(data);
+          if (data.length > 0) {
+            setSelectedRoad(data[Math.floor(Math.random() * data.length)].road_name);
+          }
+          return;
+        }
+
+        const bbox =
+          t.bbox ??
+          ([
+            t.center[0] - 0.12,
+            t.center[1] - 0.08,
+            t.center[0] + 0.12,
+            t.center[1] + 0.08,
+          ] as [number, number, number, number]);
+
+        const bboxParam = `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`;
+        const res = await fetch(`/api/town-roads?bbox=${encodeURIComponent(bboxParam)}`);
+        const json = (await res.json()) as { roads?: Road[]; error?: string };
+        if (!res.ok) throw new Error(json.error || 'Failed to load roads');
+
+        const list = json.roads ?? [];
+        setRoads(list);
+        if (list.length > 0) {
+          setSelectedRoad(list[Math.floor(Math.random() * list.length)].road_name);
+        } else {
+          setSelectedRoad('');
+        }
+      } catch (e) {
+        console.error('Error loading roads:', e);
+        setRoads([]);
+        setSelectedRoad('');
+      }
+    },
+    []
+  );
+
+  // Initial load (Worthing)
   useEffect(() => {
-    fetch('/roads.json')
-      .then(res => res.json())
-      .then(data => {
-        setRoads(data);
-        // Randomly select a road only once on initial load
-        const randomIndex = Math.floor(Math.random() * data.length);
-        setSelectedRoad(data[randomIndex].road_name);
-      })
-      .catch(err => console.error('Error loading roads:', err));
-  }, []); // Empty dependency array - only runs once
+    void loadRoadsForTown(town);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Calculate distance between two points in miles
   const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -132,7 +197,11 @@ export default function MapTest() {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(selectedRoad + ', Worthing, UK')}.json?access_token=${token}&country=GB&types=address`);
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          `${selectedRoad}, ${town.label}, UK`
+        )}.json?access_token=${token}&country=GB&types=address`
+      );
       const data = await response.json();
       
       if (data.features && data.features.length > 0) {
@@ -171,7 +240,24 @@ export default function MapTest() {
     } catch (err) {
       console.error('Error finding road location:', err);
     }
-  }, [selectedRoad, userMarker, actualMarker, calculateDistance, drawLine]);
+  }, [selectedRoad, userMarker, actualMarker, calculateDistance, drawLine, town.label]);
+
+  // Toggle road names visibility
+  const toggleRoadNames = useCallback((show: boolean) => {
+    if (!map.current) return;
+    
+    try {
+      if (show) {
+        // Show road names by setting visibility to visible
+        map.current.setLayoutProperty('road-label', 'visibility', 'visible');
+      } else {
+        // Hide road names by setting visibility to none
+        map.current.setLayoutProperty('road-label', 'visibility', 'none');
+      }
+    } catch {
+      console.log('Road names layer not available yet, will apply on next map update');
+    }
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -188,7 +274,7 @@ export default function MapTest() {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-0.3719, 50.8179], // Worthing, West Sussex
+      center: town.center, // default town
       zoom: 12
     });
 
@@ -201,24 +287,7 @@ export default function MapTest() {
     map.current.on('error', (e) => {
       console.error('Map error:', e);
     });
-  }, []);
-
-  // Toggle road names visibility
-  const toggleRoadNames = useCallback((show: boolean) => {
-    if (!map.current) return;
-    
-    try {
-      if (show) {
-        // Show road names by setting visibility to visible
-        map.current.setLayoutProperty('road-label', 'visibility', 'visible');
-      } else {
-        // Hide road names by setting visibility to none
-        map.current.setLayoutProperty('road-label', 'visibility', 'none');
-      }
-    } catch (error) {
-      console.log('Road names layer not available yet, will apply on next map update');
-    }
-  }, []);
+  }, [showRoadNames, toggleRoadNames, town.center]);
 
   // Update road names when toggle changes
   useEffect(() => {
@@ -226,6 +295,57 @@ export default function MapTest() {
       toggleRoadNames(showRoadNames);
     }
   }, [showRoadNames, toggleRoadNames]);
+
+  const searchAndSetTown = useCallback(
+    async (query: string) => {
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      if (!token) {
+        setTownError('Missing Mapbox token (NEXT_PUBLIC_MAPBOX_TOKEN).');
+        return;
+      }
+
+      setTownLoading(true);
+      setTownError('');
+      try {
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+            `${query}, UK`
+          )}.json?access_token=${token}&country=GB&types=place&limit=1`
+        );
+        const data = await res.json();
+        const feature = data?.features?.[0];
+        if (!feature?.center) {
+          throw new Error('Town not found. Try “Town, County” (e.g. “Rochdale”).');
+        }
+
+        const nextTown: TownSelection = {
+          label: feature.text || query,
+          displayName: feature.place_name || query,
+          center: feature.center as [number, number],
+          bbox: (feature.bbox as [number, number, number, number] | undefined) ?? undefined,
+        };
+
+        setTown(nextTown);
+        setTownQuery(nextTown.label);
+        resetRoundState();
+
+        if (map.current) {
+          map.current.flyTo({
+            center: nextTown.center,
+            zoom: 12,
+            duration: 900,
+          });
+        }
+
+        await loadRoadsForTown(nextTown);
+      } catch (e) {
+        setTownError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setTownLoading(false);
+      }
+    },
+    [loadRoadsForTown, resetRoundState]
+  );
 
   // Add click event listener
   useEffect(() => {
@@ -244,8 +364,9 @@ export default function MapTest() {
     <div className="h-screen flex flex-col">
       {/* Road name header */}
       <div className="bg-white shadow-md p-4 z-10">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
             <Link
               href="/"
               className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
@@ -256,18 +377,80 @@ export default function MapTest() {
               Find: {selectedRoad}
             </h1>
           </div>
-          <button
-            onClick={() => setShowRoadNames(!showRoadNames)}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setShowRoadNames(!showRoadNames)}
+                className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              >
+                {showRoadNames ? 'Hide Road Names' : 'Show Road Names'}
+              </button>
+              <button
+                onClick={getNewRoad}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                disabled={roads.length === 0}
+                title={roads.length === 0 ? 'No roads loaded for this town yet' : 'Pick a new road'}
+              >
+                🎲 New Road
+              </button>
+            </div>
+          </div>
+
+          <form
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void searchAndSetTown(townQuery);
+            }}
           >
-            {showRoadNames ? 'Hide Road Names' : 'Show Road Names'}
-          </button>
-          <button
-            onClick={getNewRoad}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-          >
-            🎲 New Road
-          </button>
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-sm text-gray-700 whitespace-nowrap">Town (UK):</span>
+              <input
+                value={townQuery}
+                onChange={(e) => setTownQuery(e.target.value)}
+                placeholder="e.g. Worthing, Rochdale, Romford"
+                className="w-full sm:w-96 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-60"
+              disabled={townLoading || townQuery.trim().length === 0}
+            >
+              {townLoading ? 'Searching…' : 'Search'}
+            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void searchAndSetTown('Worthing')}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
+              >
+                Worthing
+              </button>
+              <button
+                type="button"
+                onClick={() => void searchAndSetTown('Rochdale')}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
+              >
+                Rochdale
+              </button>
+              <button
+                type="button"
+                onClick={() => void searchAndSetTown('Romford')}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
+              >
+                Romford
+              </button>
+            </div>
+          </form>
+
+          <div className="text-sm text-gray-700">
+            Town: <span className="font-semibold">{town.label}</span>
+            <span className="text-gray-500"> — {town.displayName}</span>
+            {roads.length > 0 && (
+              <span className="text-gray-500"> (roads loaded: {roads.length})</span>
+            )}
+          </div>
+          {townError && <div className="text-sm text-red-600">{townError}</div>}
         </div>
         {distance !== null && (
           <p className="text-center text-lg text-gray-600 mt-2">
