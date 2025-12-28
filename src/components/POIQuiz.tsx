@@ -32,8 +32,6 @@ function RoadMap({ roadName, poiName, isVisible }: RoadMapProps) {
   const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
-    console.log('RoadMap render:', { isVisible, roadName, loading, error, mapExists, poiName });
-    
     if (!isVisible || !roadName) {
       console.log('RoadMap: Not visible or no road name, skipping');
       return;

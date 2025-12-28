@@ -8,9 +8,11 @@ interface RoadMapProps {
   roadName: string;
   mainRoad: string;
   isVisible: boolean;
+  townLabel?: string;
+  townCenter?: [number, number]; // [lng, lat]
 }
 
-export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps) {
+export default function RoadMap({ roadName, mainRoad, isVisible, townLabel = 'Worthing', townCenter }: RoadMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +37,7 @@ export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps)
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-0.3719, 50.8179],
+      center: townCenter ?? [-0.3719, 50.8179],
       zoom: 13
     });
 
@@ -46,7 +48,7 @@ export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps)
     map.current.on('error', (e) => {
       console.error('Map error:', e);
     });
-  }, []);
+  }, [townCenter]);
 
   // Update road when roadName changes
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps)
     console.log('Searching for road:', roadName);
 
     // Search for road
-    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(roadName + ', Worthing, UK')}.json?access_token=${token}&country=GB&types=address`)
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(roadName + ', ' + townLabel + ', UK')}.json?access_token=${token}&country=GB&types=address`)
       .then(res => res.json())
       .then(data => {
         console.log('Geocoding response:', data);
@@ -88,7 +90,7 @@ export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps)
           
           // Add road highlighting for the correct answer road (blue)
           const cleanRoadName = roadName.replace(/\s+/g, ' ').trim();
-          const searchRoadQuery = `${cleanRoadName}, Worthing, UK`;
+          const searchRoadQuery = `${cleanRoadName}, ${townLabel}, UK`;
           
           fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchRoadQuery)}.json?access_token=${token}&country=GB&types=address&limit=1`)
             .then(res => res.json())
@@ -144,7 +146,7 @@ export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps)
           
           // Now add green marker on the main road from the question
           const cleanMainRoadName = mainRoad.replace(/\s+/g, ' ').trim();
-          const searchMainRoadQuery = `${cleanMainRoadName}, Worthing, UK`;
+          const searchMainRoadQuery = `${cleanMainRoadName}, ${townLabel}, UK`;
           
           fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchMainRoadQuery)}.json?access_token=${token}&country=GB&types=address&limit=1`)
             .then(res => res.json())
@@ -190,7 +192,7 @@ export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps)
         console.error('Error searching for road:', err);
         setLoading(false);
       });
-  }, [roadName, mainRoad, isVisible]);
+  }, [roadName, mainRoad, isVisible, townLabel]);
 
   // Cleanup
   useEffect(() => {
@@ -227,7 +229,7 @@ export default function RoadMap({ roadName, mainRoad, isVisible }: RoadMapProps)
         />
 
         <p className="text-sm text-gray-600 mt-2">
-          This map shows the approximate location of {roadName} in Worthing.
+          This map shows the approximate location of {roadName} in {townLabel}.
         </p>
       </div>
     </div>
