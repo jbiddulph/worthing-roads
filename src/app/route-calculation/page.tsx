@@ -92,7 +92,7 @@ export default function RouteCalculationPage() {
                   value={address}
                   onChange={(event) => updateAddress(index, event.target.value)}
                   placeholder="Enter an address"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500"
                 />
                 <button
                   type="button"
