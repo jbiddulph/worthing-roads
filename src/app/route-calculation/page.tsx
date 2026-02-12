@@ -8,20 +8,25 @@ type CurrentLocation = {
   longitude: number;
 };
 
-function buildGoogleMapsDirectionsUrl(stops: string[], currentLocation: CurrentLocation) {
-  const origin = `${currentLocation.latitude},${currentLocation.longitude}`;
+function buildGoogleMapsDirectionsUrl(stops: string[], currentLocation?: CurrentLocation) {
   const destination = stops[stops.length - 1];
-  const waypoints = stops.slice(0, -1);
+  const origin = currentLocation
+    ? `${currentLocation.latitude},${currentLocation.longitude}`
+    : stops.length > 1
+      ? stops[0]
+      : undefined;
 
-  const params = new URLSearchParams({
-    api: '1',
-    origin,
-    destination,
-    travelmode: 'driving',
-  });
+  const waypoints = currentLocation ? stops.slice(0, -1) : stops.slice(1, -1);
+
+  const params = new URLSearchParams({ api: '1', destination, travelmode: 'driving' });
+
+  if (origin) {
+    params.set('origin', origin);
+  }
 
   if (waypoints.length > 0) {
-    params.set('waypoints', waypoints.join('|'));
+    const optimizedWaypoints = waypoints.length > 1 ? ['optimize:true', ...waypoints] : waypoints;
+    params.set('waypoints', optimizedWaypoints.join('|'));
   }
 
   return `https://www.google.com/maps/dir/?${params.toString()}`;
@@ -90,13 +95,30 @@ export default function RouteCalculationPage() {
     }
 
     setIsSending(true);
+    const mapsTab = window.open('', '_blank');
 
     try {
-      const currentLocation = await getCurrentLocation();
-      const mapsUrl = buildGoogleMapsDirectionsUrl(filledAddresses, currentLocation);
-      window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+      let mapsUrl = '';
+
+      try {
+        const currentLocation = await getCurrentLocation();
+        mapsUrl = buildGoogleMapsDirectionsUrl(filledAddresses, currentLocation);
+      } catch {
+        // Fall back to address-only routing when location access is unavailable.
+        mapsUrl = buildGoogleMapsDirectionsUrl(filledAddresses);
+      }
+
+      if (mapsTab) {
+        mapsTab.opener = null;
+        mapsTab.location.href = mapsUrl;
+      } else {
+        window.location.href = mapsUrl;
+      }
     } catch {
-      setError('Unable to access your current location. Please allow location access and try again.');
+      if (mapsTab && !mapsTab.closed) {
+        mapsTab.close();
+      }
+      setError('Unable to send route to Google Maps. Please try again.');
     } finally {
       setIsSending(false);
     }
@@ -117,7 +139,8 @@ export default function RouteCalculationPage() {
 
         <p className="text-sm text-gray-600 mb-6">
           Add all the addresses you want in your trip, then send them to Google Maps to calculate
-          the quickest route. Your device&apos;s live location will always be the trip start.
+          the quickest route. If location access is available, your device&apos;s live location will
+          be used as the trip start; otherwise, routing will start from the first address you enter.
         </p>
 
         <form onSubmit={sendToGoogleMaps}>
@@ -165,7 +188,7 @@ export default function RouteCalculationPage() {
             className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-60"
             disabled={filledAddresses.length < 1 || isSending}
           >
-            {isSending ? 'Getting current location...' : 'Send to Google Maps'}
+            {isSending ? 'Preparing route...' : 'Send to Google Maps'}
           </button>
         </form>
       </div>
