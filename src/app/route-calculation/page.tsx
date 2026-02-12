@@ -139,7 +139,8 @@ export default function RouteCalculationPage() {
 
         <p className="text-sm text-gray-600 mb-6">
           Add all the addresses you want in your trip, then send them to Google Maps to calculate
-          the quickest route. Your device&apos;s live location will always be the trip start.
+          the quickest route. If location access is available, your device&apos;s live location will
+          be used as the trip start; otherwise, routing will start from the first address you enter.
         </p>
 
         <form onSubmit={sendToGoogleMaps}>
@@ -187,7 +188,7 @@ export default function RouteCalculationPage() {
             className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-60"
             disabled={filledAddresses.length < 1 || isSending}
           >
-            {isSending ? 'Getting current location...' : 'Send to Google Maps'}
+            {isSending ? 'Preparing route...' : 'Send to Google Maps'}
           </button>
         </form>
       </div>
