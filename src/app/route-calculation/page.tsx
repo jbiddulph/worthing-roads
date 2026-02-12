@@ -3,10 +3,15 @@
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 
-function buildGoogleMapsDirectionsUrl(stops: string[]) {
-  const origin = stops[0];
+type CurrentLocation = {
+  latitude: number;
+  longitude: number;
+};
+
+function buildGoogleMapsDirectionsUrl(stops: string[], currentLocation: CurrentLocation) {
+  const origin = `${currentLocation.latitude},${currentLocation.longitude}`;
   const destination = stops[stops.length - 1];
-  const waypoints = stops.slice(1, -1);
+  const waypoints = stops.slice(0, -1);
 
   const params = new URLSearchParams({
     api: '1',
@@ -22,9 +27,36 @@ function buildGoogleMapsDirectionsUrl(stops: string[]) {
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
+function getCurrentLocation(): Promise<CurrentLocation> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by this browser.'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => {
+        reject(new Error('Unable to retrieve your current location.'));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10_000,
+        maximumAge: 0,
+      }
+    );
+  });
+}
+
 export default function RouteCalculationPage() {
   const [addresses, setAddresses] = useState<string[]>(['', '']);
   const [error, setError] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const filledAddresses = useMemo(
     () => addresses.map((item) => item.trim()).filter((item) => item.length > 0),
@@ -48,17 +80,26 @@ export default function RouteCalculationPage() {
     });
   };
 
-  const sendToGoogleMaps = (event: FormEvent<HTMLFormElement>) => {
+  const sendToGoogleMaps = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
 
-    if (filledAddresses.length < 2) {
-      setError('Please enter at least two addresses before sending to Google Maps.');
+    if (filledAddresses.length < 1) {
+      setError('Please enter at least one address before sending to Google Maps.');
       return;
     }
 
-    const mapsUrl = buildGoogleMapsDirectionsUrl(filledAddresses);
-    window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+    setIsSending(true);
+
+    try {
+      const currentLocation = await getCurrentLocation();
+      const mapsUrl = buildGoogleMapsDirectionsUrl(filledAddresses, currentLocation);
+      window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      setError('Unable to access your current location. Please allow location access and try again.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -76,7 +117,7 @@ export default function RouteCalculationPage() {
 
         <p className="text-sm text-gray-600 mb-6">
           Add all the addresses you want in your trip, then send them to Google Maps to calculate
-          the quickest route.
+          the quickest route. Your device&apos;s live location will always be the trip start.
         </p>
 
         <form onSubmit={sendToGoogleMaps}>
@@ -122,9 +163,9 @@ export default function RouteCalculationPage() {
           <button
             type="submit"
             className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-60"
-            disabled={filledAddresses.length < 2}
+            disabled={filledAddresses.length < 1 || isSending}
           >
-            Send to Google Maps
+            {isSending ? 'Getting current location...' : 'Send to Google Maps'}
           </button>
         </form>
       </div>
